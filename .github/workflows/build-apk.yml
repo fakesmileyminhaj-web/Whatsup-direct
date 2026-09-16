@@ -39,6 +39,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Ensure Android SDK API 36
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager --install "platforms;android-36" || true
+
       - name: Build Debug APK
         run: |
           cd android
