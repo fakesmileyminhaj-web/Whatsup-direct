@@ -1,0 +1,10 @@
+{
+  "name": "WhatsApp Direct",
+  "description": "Open WhatsApp chats instantly without saving phone numbers.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --theme-color: #25D366;
+    --theme-hover: #1eb956;
+    --theme-surface: rgba(37, 211, 102, 0.08);
+    --theme-border: rgba(37, 211, 102, 0.25);
+    --theme-dark-accent: #00A884;
+    --theme-text: #075E54;
+    --wave-duration: 6s;
+  }
+
+  /* Theme Color Variations */
+  [data-theme-color="whatsapp"] {
+    --theme-color: #25D366;
+    --theme-hover: #1eb956;
+    --theme-surface: rgba(37, 211, 102, 0.08);
+    --theme-border: rgba(37, 211, 102, 0.25);
+    --theme-text: #128C7E;
+  }
+
+  [data-theme-color="emerald"] {
+    --theme-color: #10B981;
+    --theme-hover: #059669;
+    --theme-surface: rgba(16, 185, 129, 0.08);
+    --theme-border: rgba(16, 185, 129, 0.25);
+    --theme-text: #047857;
+  }
+
+  [data-theme-color="teal"] {
+    --theme-color: #0D9488;
+    --theme-hover: #0f766e;
+    --theme-surface: rgba(13, 148, 136, 0.08);
+    --theme-border: rgba(13, 148, 136, 0.25);
+    --theme-text: #115e59;
+  }
+
+  [data-theme-color="forest"] {
+    --theme-color: #15803D;
+    --theme-hover: #166534;
+    --theme-surface: rgba(21, 128, 61, 0.08);
+    --theme-border: rgba(21, 128, 61, 0.25);
+    --theme-text: #14532d;
+  }
+
+  /* Dark mode overrides for surfaces */
+  .dark {
+    --theme-surface: rgba(37, 211, 102, 0.12);
+    --theme-border: rgba(37, 211, 102, 0.35);
+    --theme-text: #25D366;
+  }
+
+  .dark[data-theme-color="emerald"] {
+    --theme-surface: rgba(16, 185, 129, 0.12);
+    --theme-border: rgba(16, 185, 129, 0.35);
+    --theme-text: #34D399;
+  }
+
+  .dark[data-theme-color="teal"] {
+    --theme-surface: rgba(13, 148, 136, 0.12);
+    --theme-border: rgba(13, 148, 136, 0.35);
+    --theme-text: #2dd4bf;
+  }
+
+  .dark[data-theme-color="forest"] {
+    --theme-surface: rgba(21, 128, 61, 0.12);
+    --theme-border: rgba(21, 128, 61, 0.35);
+    --theme-text: #4ade80;
+  }
+}
+
+/* Custom breathing wave animations */
+@keyframes breathingWave1 {
+  0% {
+    transform: translateY(0px) scaleY(1);
+  }
+  50% {
+    transform: translateY(-8px) scaleY(1.08);
+  }
+  100% {
+    transform: translateY(0px) scaleY(1);
+  }
+}
+
+@keyframes breathingWave2 {
+  0% {
+    transform: translateY(0px) scaleY(1) scaleX(1);
+  }
+  50% {
+    transform: translateY(-13px) scaleY(1.14) scaleX(1.02);
+  }
+  100% {
+    transform: translateY(0px) scaleY(1) scaleX(1);
+  }
+}
+
+@keyframes breathingWave3 {
+  0% {
+    transform: translateY(0px) scaleY(1);
+  }
+  50% {
+    transform: translateY(-5px) scaleY(1.05);
+  }
+  100% {
+    transform: translateY(0px) scaleY(1);
+  }
+}
+
+.animate-wave-1 {
+  animation: breathingWave1 var(--wave-duration, 6s) cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  transform-origin: bottom center;
+}
+
+.animate-wave-2 {
+  animation: breathingWave2 calc(var(--wave-duration, 6s) * 1.2) cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  animation-delay: -1.5s;
+  transform-origin: bottom center;
+}
+
+.animate-wave-3 {
+  animation: breathingWave3 calc(var(--wave-duration, 6s) * 0.9) cubic-bezier(0.37, 0, 0.63, 1) infinite;
+  animation-delay: -3s;
+  transform-origin: bottom center;
+}
+
+/* Respect user reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-wave-1,
+  .animate-wave-2,
+  .animate-wave-3 {
+    animation: none !important;
+  }
+}
+
+/* Mobile viewport and tap improvements */
+html, body {
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+input, textarea {
+  user-select: text;
+}
