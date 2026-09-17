@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { ActionCards } from './components/ActionCards';
 import { ManualInputSection } from './components/ManualInputSection';
+import { UnifiedScannerSection } from './components/UnifiedScannerSection';
+import { GallerySection } from './components/GallerySection';
 import { CountrySelectorModal } from './components/CountrySelectorModal';
-import { ScannerModal } from './components/ScannerModal';
 import { SettingsScreen } from './components/SettingsScreen';
-import { Footer } from './components/Footer';
 import { WaveAnimation } from './components/WaveAnimation';
 import { DEFAULT_COUNTRY_CODE, getCountryByCode } from './data/countries';
 import { TRANSLATIONS } from './data/translations';
@@ -16,13 +16,37 @@ import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Browser } from '@capacitor/browser';
 
-const SETTINGS_STORAGE_KEY = 'whatsapp_direct_settings_v1';
-const HISTORY_STORAGE_KEY = 'whatsapp_direct_history_v1';
+const SETTINGS_STORAGE_KEY = 'whatsapp_direct_settings_v2';
+const HISTORY_STORAGE_KEY = 'whatsapp_direct_history_v2';
+
+export const DEFAULT_CUSTOM_COLOR = '#EF4444'; // Clean standard red
+
+// Subtly tint/darken the background according to custom color (blending 5% color into neutral light #F4F5F6)
+function computeCustomThemeBg(hex: string): string {
+  try {
+    const clean = hex.replace('#', '').trim();
+    let r = 239, g = 68, b = 68;
+    if (clean.length === 3) {
+      r = parseInt(clean[0] + clean[0], 16);
+      g = parseInt(clean[1] + clean[1], 16);
+      b = parseInt(clean[2] + clean[2], 16);
+    } else if (clean.length === 6) {
+      r = parseInt(clean.substring(0, 2), 16);
+      g = parseInt(clean.substring(2, 4), 16);
+      b = parseInt(clean.substring(4, 6), 16);
+    }
+    const br = Math.round(r * 0.05 + 244 * 0.95);
+    const bg = Math.round(g * 0.05 + 245 * 0.95);
+    const bb = Math.round(b * 0.05 + 246 * 0.95);
+    return `rgb(${br}, ${bg}, ${bb})`;
+  } catch {
+    return '#EEF6F2';
+  }
+}
 
 const defaultSettings: AppSettings = {
-  themeMode: 'system',
   themeColor: 'whatsapp',
-  language: 'en',
+  customColorHex: DEFAULT_CUSTOM_COLOR,
   defaultCountryCode: DEFAULT_COUNTRY_CODE,
   autoGenerateLink: true,
   waveAnimation: true,
@@ -30,21 +54,27 @@ const defaultSettings: AppSettings = {
   historyEnabled: true,
 };
 
+const MODES: ActionOption[] = ['manual', 'scan', 'gallery'];
+
 export default function App() {
-  // 1. Persistent App Settings
+  // 1. App Settings (Persistent)
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (saved) {
-        return { ...defaultSettings, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        if (parsed.customColorHex === '#25D366') {
+          parsed.customColorHex = DEFAULT_CUSTOM_COLOR;
+        }
+        return { ...defaultSettings, ...parsed };
       }
     } catch (e) {
-      console.warn('Failed to load settings from localStorage', e);
+      console.warn('Failed to load settings', e);
     }
     return defaultSettings;
   });
 
-  // 2. Persistent Recent Numbers
+  // 2. Recent Numbers History (Persistent)
   const [recentNumbers, setRecentNumbers] = useState<RecentNumber[]>(() => {
     try {
       const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
@@ -52,7 +82,7 @@ export default function App() {
         return JSON.parse(saved);
       }
     } catch (e) {
-      console.warn('Failed to load history from localStorage', e);
+      console.warn('Failed to load history', e);
     }
     return [];
   });
@@ -75,50 +105,41 @@ export default function App() {
     }
   }, [recentNumbers]);
 
-  // Handle Theme Mode (Light / Dark / System) & Theme Color on HTML tag
+  // Fixed Clean Light Mode & Theme Color Management
   useEffect(() => {
     const root = document.documentElement;
+    // Always enforce fixed clean light theme (remove dark class)
+    root.classList.remove('dark');
     root.setAttribute('data-theme-color', settings.themeColor);
 
-    const applyDark = (isDark: boolean) => {
-      if (isDark) {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-
-      if (Capacitor.isNativePlatform()) {
-        StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light }).catch(() => {});
-        const colorMap: Record<string, string> = {
-          whatsapp: '#128C7E',
-          emerald: '#059669',
-          teal: '#0F766E',
-          forest: '#14532D',
-        };
-        StatusBar.setBackgroundColor({
-          color: isDark ? '#030712' : (colorMap[settings.themeColor] || '#128C7E')
-        }).catch(() => {});
-      }
-    };
-
-    if (settings.themeMode === 'dark') {
-      applyDark(true);
-    } else if (settings.themeMode === 'light') {
-      applyDark(false);
+    // Apply custom color if selected
+    if (settings.themeColor === 'custom' && settings.customColorHex) {
+      const hex = settings.customColorHex;
+      root.style.setProperty('--theme-color', hex);
+      root.style.setProperty('--theme-hover', hex);
+      root.style.setProperty('--theme-surface', `${hex}15`);
+      root.style.setProperty('--theme-border', `${hex}45`);
+      root.style.setProperty('--theme-text', hex);
+      root.style.setProperty('--theme-bg', computeCustomThemeBg(hex));
     } else {
-      // System Default
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      applyDark(mediaQuery.matches);
-
-      const listener = (e: MediaQueryListEvent) => {
-        applyDark(e.matches);
-      };
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
+      root.style.removeProperty('--theme-color');
+      root.style.removeProperty('--theme-hover');
+      root.style.removeProperty('--theme-surface');
+      root.style.removeProperty('--theme-border');
+      root.style.removeProperty('--theme-text');
+      root.style.removeProperty('--theme-bg');
     }
-  }, [settings.themeMode, settings.themeColor]);
 
-  // Active Main Action & Input State
+    // Android Status Bar: Keep visible, readable, and non-overlapping
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+      StatusBar.show().catch(() => {});
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: '#FFFFFF' }).catch(() => {});
+    }
+  }, [settings.themeColor, settings.customColorHex]);
+
+  // Active Main Mode (Manual, Scan, From Gallery)
   const [activeAction, setActiveAction] = useState<ActionOption>('manual');
   const [selectedCountry, setSelectedCountry] = useState<Country>(() =>
     getCountryByCode(settings.defaultCountryCode)
@@ -128,8 +149,6 @@ export default function App() {
   // Modals & Navigation
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
-  const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
-  const [scannerMode, setScannerMode] = useState<ActionOption>('scan_card');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sync default country when changed in settings
@@ -142,9 +161,7 @@ export default function App() {
   // Android Hardware / Browser Back Button Support
   useEffect(() => {
     const handlePopState = () => {
-      if (isScannerModalOpen) {
-        setIsScannerModalOpen(false);
-      } else if (isCountryModalOpen) {
+      if (isCountryModalOpen) {
         setIsCountryModalOpen(false);
       } else if (isSettingsOpen) {
         setIsSettingsOpen(false);
@@ -156,12 +173,12 @@ export default function App() {
     let removeBack: (() => void) | null = null;
     if (Capacitor.isNativePlatform()) {
       CapApp.addListener('backButton', () => {
-        if (isScannerModalOpen) {
-          setIsScannerModalOpen(false);
-        } else if (isCountryModalOpen) {
+        if (isCountryModalOpen) {
           setIsCountryModalOpen(false);
         } else if (isSettingsOpen) {
           setIsSettingsOpen(false);
+        } else if (activeAction !== 'manual') {
+          setActiveAction('manual');
         } else {
           CapApp.exitApp();
         }
@@ -174,7 +191,7 @@ export default function App() {
       window.removeEventListener('popstate', handlePopState);
       if (removeBack) removeBack();
     };
-  }, [isScannerModalOpen, isCountryModalOpen, isSettingsOpen]);
+  }, [isCountryModalOpen, isSettingsOpen, activeAction]);
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -186,37 +203,21 @@ export default function App() {
     return normalizePhoneNumber(phoneNumber, selectedCountry.code);
   }, [phoneNumber, selectedCountry]);
 
-  // When an action option is clicked
-  const handleSelectAction = (action: ActionOption) => {
-    setActiveAction(action);
-    if (action === 'manual') {
-      // Focus on manual input
-      const inputEl = document.getElementById('phone-number-input');
-      inputEl?.focus();
-    } else {
-      // Launch Scanner / Camera / Gallery modal
-      setScannerMode(action);
-      setIsScannerModalOpen(true);
-      window.history.pushState({ modal: 'scanner' }, '');
-    }
-  };
-
-  // When a number is selected from Scanner (Card OCR, QR Code, or Gallery)
-  const handleApplyScannedNumber = (number: string) => {
+  // When a number is selected/confirmed from Unified Scan or From Gallery
+  const handleApplyDetectedNumber = (number: string) => {
     setPhoneNumber(number);
     setActiveAction('manual');
-    setIsScannerModalOpen(false);
-    showToast(TRANSLATIONS[settings.language].normalizedNotice);
+    showToast(TRANSLATIONS.normalizedNotice);
   };
 
-  // Native and Web WhatsApp Launcher
+  // WhatsApp Launcher
   const launchWhatsApp = async (url: string) => {
     if (Capacitor.isNativePlatform()) {
       try {
         await Browser.open({ url, windowName: '_system' });
         return;
       } catch (e) {
-        console.warn('Browser.open failed, falling back to window.location', e);
+        console.warn('Browser.open fallback', e);
       }
     }
     try {
@@ -233,9 +234,9 @@ export default function App() {
   const handleOpenWhatsApp = () => {
     if (!validation.isValid || !validation.waUrl) return;
 
-    showToast(TRANSLATIONS[settings.language].openingWhatsApp);
+    showToast(TRANSLATIONS.openingWhatsApp);
 
-    // If history enabled, save locally
+    // Save locally if history is enabled
     if (settings.historyEnabled) {
       const newItem: RecentNumber = {
         id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -248,11 +249,10 @@ export default function App() {
       };
 
       setRecentNumbers((prev) => {
-        // Filter out duplicate identical international numbers and prepend fresh one
         const filtered = prev.filter(
           (item) => item.internationalNumber !== validation.internationalNumber
         );
-        return [newItem, ...filtered].slice(0, 50); // Keep last 50
+        return [newItem, ...filtered].slice(0, 50);
       });
     }
 
@@ -304,6 +304,50 @@ export default function App() {
     setIsCountryModalOpen(false);
   };
 
+  // Horizontal Swipe Gesture Detection for the 3 modes:
+  // Manual <-> Scan <-> From Gallery
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const touchStartTime = useRef<number>(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    touchStartTime.current = Date.now();
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+    const deltaTime = Date.now() - touchStartTime.current;
+
+    // Trigger only if horizontal swipe >= 45px, abs(deltaX) > abs(deltaY) * 1.4, and within 500ms
+    if (
+      Math.abs(deltaX) > 45 &&
+      Math.abs(deltaX) > Math.abs(deltaY) * 1.4 &&
+      deltaTime < 500
+    ) {
+      const currentIndex = MODES.indexOf(activeAction);
+      if (deltaX < 0) {
+        // Swiped Left: next mode
+        if (currentIndex < MODES.length - 1) {
+          setActiveAction(MODES[currentIndex + 1]);
+        }
+      } else {
+        // Swiped Right: previous mode
+        if (currentIndex > 0) {
+          setActiveAction(MODES[currentIndex - 1]);
+        }
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const activeIndex = MODES.indexOf(activeAction);
+
   // If Settings screen is open, display it cleanly
   if (isSettingsOpen) {
     return (
@@ -323,54 +367,82 @@ export default function App() {
   return (
     <div
       id="whatsapp-direct-app"
-      className="min-h-screen w-full bg-gray-50/70 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col justify-between relative overflow-x-hidden selection:bg-[var(--theme-color)] selection:text-white transition-colors"
+      className="min-h-screen w-full text-gray-900 flex flex-col justify-between relative overflow-x-hidden selection:bg-[var(--theme-color)] selection:text-white transition-colors"
+      style={{ backgroundColor: 'var(--theme-bg)' }}
     >
       {/* App Container */}
       <div className="w-full max-w-md mx-auto flex flex-col flex-1 relative z-10">
-        {/* 1. Header */}
-        <Header onOpenSettings={openSettings} language={settings.language} />
+        {/* 1. Header (Clean, English, Settings Gear) */}
+        <Header onOpenSettings={openSettings} />
 
         {/* Global Toast Notification */}
         {toastMessage && (
-          <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-xl text-xs font-medium shadow-lg animate-in fade-in slide-in-from-top-2">
+          <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2 rounded-xl text-xs font-medium shadow-lg animate-in fade-in slide-in-from-top-2">
             {toastMessage}
           </div>
         )}
 
         {/* 2. Main Content Area */}
-        <main className="flex-1 px-4 py-4 flex flex-col gap-4">
-          {/* Action Options (Manual, Scan Card, Scan QR, From Gallery) */}
+        <main className="flex-1 px-4 py-4 flex flex-col gap-3.5">
+          {/* Exact 3 Mode Selector (Manual, Scan, From Gallery) */}
           <ActionCards
             activeAction={activeAction}
-            onSelectAction={handleSelectAction}
-            language={settings.language}
+            onSelectAction={(mode) => setActiveAction(mode)}
           />
 
-          {/* Manual Input, Country Selector, and Dynamic Link Generation */}
-          <ManualInputSection
-            country={selectedCountry}
-            phoneNumber={phoneNumber}
-            onChangePhoneNumber={setPhoneNumber}
-            onClearPhoneNumber={() => setPhoneNumber('')}
-            onOpenCountryModal={openCountryModal}
-            validation={validation}
-            autoGenerateLink={settings.autoGenerateLink}
-            onOpenWhatsApp={handleOpenWhatsApp}
-            language={settings.language}
-          />
+          {/* Swipeable View Container for the 3 modes */}
+          <div
+            id="swipeable-modes-container"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className="w-full overflow-hidden relative"
+          >
+            <div
+              className="flex w-full transition-transform duration-300 ease-out"
+              style={{
+                transform: `translateX(-${activeIndex * 100}%)`,
+              }}
+            >
+              {/* Panel 0: Manual Input */}
+              <div className="w-full flex-shrink-0">
+                <ManualInputSection
+                  country={selectedCountry}
+                  phoneNumber={phoneNumber}
+                  onChangePhoneNumber={setPhoneNumber}
+                  onClearPhoneNumber={() => setPhoneNumber('')}
+                  onOpenCountryModal={openCountryModal}
+                  validation={validation}
+                  onOpenWhatsApp={handleOpenWhatsApp}
+                  onCopySuccess={showToast}
+                />
+              </div>
+
+              {/* Panel 1: Unified Scan (Camera QR + OCR) */}
+              <div className="w-full flex-shrink-0">
+                <UnifiedScannerSection
+                  isActive={activeAction === 'scan'}
+                  onApplyNumber={handleApplyDetectedNumber}
+                />
+              </div>
+
+              {/* Panel 2: From Gallery */}
+              <div className="w-full flex-shrink-0">
+                <GallerySection
+                  onApplyNumber={handleApplyDetectedNumber}
+                />
+              </div>
+            </div>
+          </div>
         </main>
-
-        {/* 3. Footer */}
-        <Footer language={settings.language} />
       </div>
 
-      {/* 4. Subtle Animated Bottom Wave */}
+      {/* 3. Subtle Animated Bottom Wave (Configurable in Settings) */}
       <WaveAnimation
         enabled={settings.waveAnimation}
         speed={settings.waveSpeed}
       />
 
-      {/* 5. Country Selector Modal */}
+      {/* 4. Country Selector Modal */}
       <CountrySelectorModal
         isOpen={isCountryModalOpen}
         onClose={closeCountryModal}
@@ -379,16 +451,6 @@ export default function App() {
           setSelectedCountry(country);
           closeCountryModal();
         }}
-        language={settings.language}
-      />
-
-      {/* 6. Smart Scanner Modal (Scan Card / Scan QR / Gallery) */}
-      <ScannerModal
-        mode={scannerMode}
-        isOpen={isScannerModalOpen}
-        onClose={() => setIsScannerModalOpen(false)}
-        onSelectNumber={handleApplyScannedNumber}
-        language={settings.language}
       />
     </div>
   );

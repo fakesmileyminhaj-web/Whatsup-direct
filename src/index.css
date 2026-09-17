@@ -4,70 +4,36 @@
   :root {
     --theme-color: #25D366;
     --theme-hover: #1eb956;
-    --theme-surface: rgba(37, 211, 102, 0.08);
-    --theme-border: rgba(37, 211, 102, 0.25);
+    --theme-surface: rgba(37, 211, 102, 0.09);
+    --theme-border: rgba(37, 211, 102, 0.28);
     --theme-dark-accent: #00A884;
-    --theme-text: #075E54;
+    --theme-text: #128C7E;
+    --theme-bg: #EEF6F2;
     --wave-duration: 6s;
   }
 
-  /* Theme Color Variations */
+  /* Exactly 3 Theme Colors */
+  /* 1. WhatsApp Green */
   [data-theme-color="whatsapp"] {
     --theme-color: #25D366;
     --theme-hover: #1eb956;
-    --theme-surface: rgba(37, 211, 102, 0.08);
-    --theme-border: rgba(37, 211, 102, 0.25);
+    --theme-surface: rgba(37, 211, 102, 0.09);
+    --theme-border: rgba(37, 211, 102, 0.28);
     --theme-text: #128C7E;
+    --theme-bg: #EEF6F2;
   }
 
-  [data-theme-color="emerald"] {
-    --theme-color: #10B981;
-    --theme-hover: #059669;
-    --theme-surface: rgba(16, 185, 129, 0.08);
-    --theme-border: rgba(16, 185, 129, 0.25);
-    --theme-text: #047857;
+  /* 2. Dark Purple */
+  [data-theme-color="purple"] {
+    --theme-color: #6B21A8;
+    --theme-hover: #581C87;
+    --theme-surface: rgba(107, 33, 168, 0.09);
+    --theme-border: rgba(107, 33, 168, 0.28);
+    --theme-text: #6B21A8;
+    --theme-bg: #F5EEF9;
   }
 
-  [data-theme-color="teal"] {
-    --theme-color: #0D9488;
-    --theme-hover: #0f766e;
-    --theme-surface: rgba(13, 148, 136, 0.08);
-    --theme-border: rgba(13, 148, 136, 0.25);
-    --theme-text: #115e59;
-  }
-
-  [data-theme-color="forest"] {
-    --theme-color: #15803D;
-    --theme-hover: #166534;
-    --theme-surface: rgba(21, 128, 61, 0.08);
-    --theme-border: rgba(21, 128, 61, 0.25);
-    --theme-text: #14532d;
-  }
-
-  /* Dark mode overrides for surfaces */
-  .dark {
-    --theme-surface: rgba(37, 211, 102, 0.12);
-    --theme-border: rgba(37, 211, 102, 0.35);
-    --theme-text: #25D366;
-  }
-
-  .dark[data-theme-color="emerald"] {
-    --theme-surface: rgba(16, 185, 129, 0.12);
-    --theme-border: rgba(16, 185, 129, 0.35);
-    --theme-text: #34D399;
-  }
-
-  .dark[data-theme-color="teal"] {
-    --theme-surface: rgba(13, 148, 136, 0.12);
-    --theme-border: rgba(13, 148, 136, 0.35);
-    --theme-text: #2dd4bf;
-  }
-
-  .dark[data-theme-color="forest"] {
-    --theme-surface: rgba(21, 128, 61, 0.12);
-    --theme-border: rgba(21, 128, 61, 0.35);
-    --theme-text: #4ade80;
-  }
+  /* 3. Custom Color is dynamically injected via root inline styles in App.tsx */
 }
 
 /* Custom breathing wave animations */
@@ -139,6 +105,8 @@ html, body {
   padding: 0;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  background-color: var(--theme-bg, #EEF6F2);
+  color: #111827;
 }
 
 input, textarea {

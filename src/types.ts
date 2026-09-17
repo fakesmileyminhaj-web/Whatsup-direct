@@ -1,15 +1,11 @@
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeColor = 'whatsapp' | 'purple' | 'custom';
 
-export type ThemeColor = 'whatsapp' | 'emerald' | 'teal' | 'forest';
-
-export type Language = 'en' | 'bn';
-
-export type ActionOption = 'manual' | 'scan_card' | 'scan_qr' | 'gallery';
+export type ActionOption = 'manual' | 'scan' | 'gallery';
 
 export interface Country {
   code: string; // ISO 2-letter (e.g. 'BD')
   nameEn: string;
-  nameBn: string;
+  nameBn?: string;
   dialCode: string; // e.g. '+880'
   flag: string; // emoji flag
   example: string;
@@ -28,9 +24,8 @@ export interface RecentNumber {
 }
 
 export interface AppSettings {
-  themeMode: ThemeMode;
   themeColor: ThemeColor;
-  language: Language;
+  customColorHex?: string;
   defaultCountryCode: string; // e.g. 'BD'
   autoGenerateLink: boolean;
   waveAnimation: boolean;
