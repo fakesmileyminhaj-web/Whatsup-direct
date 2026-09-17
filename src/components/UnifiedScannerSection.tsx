@@ -185,6 +185,14 @@ export const UnifiedScannerSection: React.FC<UnifiedScannerSectionProps> = ({
     }
   };
 
+  const handleCancelOperation = () => {
+    setIsProcessingOcr(false);
+    setDetectedCandidates([]);
+    setSelectedCandidate('');
+    setEditingCandidate('');
+    setDetectionNotice(null);
+  };
+
   return (
     <div id="unified-scan-section" className="flex flex-col gap-3.5 w-full">
       {/* Hidden canvas for processing */}
@@ -201,51 +209,23 @@ export const UnifiedScannerSection: React.FC<UnifiedScannerSectionProps> = ({
           className={`w-full h-full object-cover ${isCameraActive ? 'block' : 'hidden'}`}
         />
 
-        {/* Framing viewfinder overlay when camera is running */}
+        {/* Minimalist framing reticle (No distracting text overlays) */}
         {isCameraActive && (
-          <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-between p-4">
-            <div className="w-full text-center">
-              <span className="inline-block px-3 py-1 rounded-full bg-black/60 backdrop-blur-xs text-[11px] font-medium text-white shadow-xs">
-                {TRANSLATIONS.scanningHint}
-              </span>
-            </div>
-
-            {/* Targeting Reticle */}
-            <div className="w-3/4 h-1/2 border-2 border-dashed border-[var(--theme-color)] rounded-2xl relative shadow-lg">
-              <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-[var(--theme-color)] rounded-tl-sm" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-[var(--theme-color)] rounded-tr-sm" />
-              <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-[var(--theme-color)] rounded-bl-sm" />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-[var(--theme-color)] rounded-br-sm" />
-            </div>
-
-            <div className="text-[10px] text-white/80 bg-black/40 px-2.5 py-0.5 rounded-md">
-              QR codes scan automatically • Tap button for cards/text
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-6">
+            <div className="w-3/4 h-3/4 max-w-[280px] max-h-[220px] border border-white/20 rounded-2xl relative shadow-sm">
+              <div className="absolute -top-1 -left-1 w-5 h-5 border-t-2 border-l-2 border-[var(--theme-color)] rounded-tl-lg" />
+              <div className="absolute -top-1 -right-1 w-5 h-5 border-t-2 border-r-2 border-[var(--theme-color)] rounded-tr-lg" />
+              <div className="absolute -bottom-1 -left-1 w-5 h-5 border-b-2 border-l-2 border-[var(--theme-color)] rounded-bl-lg" />
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 border-b-2 border-r-2 border-[var(--theme-color)] rounded-br-lg" />
             </div>
           </div>
         )}
 
-        {/* Camera Idle / Inactive Overlay */}
-        {!isCameraActive && (
-          <div className="flex flex-col items-center justify-center p-6 text-center gap-3 text-white">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-[var(--theme-color)]">
-              <Camera className="w-6 h-6 stroke-[1.8]" />
-            </div>
-            <div className="flex flex-col gap-1 max-w-xs">
-              <span className="text-sm font-semibold text-white">
-                Unified Camera Scanner
-              </span>
-              <span className="text-xs text-gray-300">
-                Scans WhatsApp QR codes, visiting cards, documents, and printed numbers.
-              </span>
-            </div>
-            <button
-              type="button"
-              id="btn-start-camera"
-              onClick={startCameraStream}
-              className="mt-1 px-5 py-2.5 rounded-xl bg-[var(--theme-color)] text-white text-xs font-semibold shadow-sm hover:opacity-95 active:scale-95 transition cursor-pointer"
-            >
-              {TRANSLATIONS.startCamera}
-            </button>
+        {/* Natural ready state / starting indication (No fake paused overlay) */}
+        {!isCameraActive && !cameraError && (
+          <div className="flex flex-col items-center justify-center p-6 text-center gap-2 text-white">
+            <RefreshCw className="w-6 h-6 animate-spin text-[var(--theme-color)]" />
+            <span className="text-xs text-gray-300">Starting camera...</span>
           </div>
         )}
 
@@ -257,30 +237,29 @@ export const UnifiedScannerSection: React.FC<UnifiedScannerSectionProps> = ({
             <button
               type="button"
               onClick={startCameraStream}
-              className="mt-2 px-4 py-2 rounded-xl bg-[var(--theme-color)] text-white text-xs font-medium"
+              className="mt-2 px-4 py-2 rounded-xl bg-[var(--theme-color)] text-white text-xs font-medium cursor-pointer"
             >
               {TRANSLATIONS.retryCamera}
             </button>
           </div>
         )}
 
-        {/* Camera Floating Controls (Switch Camera & Stop) */}
+        {/* Camera Switch Control (Positioned in BOTTOM-RIGHT CORNER) */}
         {isCameraActive && (
-          <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-            <button
-              type="button"
-              id="btn-switch-camera"
-              onClick={toggleFacingMode}
-              title={TRANSLATIONS.switchCamera}
-              className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition active:scale-90 cursor-pointer shadow-xs"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            id="btn-switch-camera"
+            onClick={toggleFacingMode}
+            title={TRANSLATIONS.switchCamera}
+            aria-label={TRANSLATIONS.switchCamera}
+            className="absolute bottom-3 right-3 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition active:scale-90 cursor-pointer shadow-md backdrop-blur-xs"
+          >
+            <RefreshCw className="w-4 h-4 stroke-[2]" />
+          </button>
         )}
       </div>
 
-      {/* Camera Action Buttons */}
+      {/* Camera Action Controls */}
       {isCameraActive && (
         <div className="flex items-center gap-2">
           <button
@@ -304,6 +283,18 @@ export const UnifiedScannerSection: React.FC<UnifiedScannerSectionProps> = ({
             </span>
           </button>
 
+          {/* Cancel button if OCR is processing or candidate numbers are displayed */}
+          {(isProcessingOcr || detectedCandidates.length > 0) && (
+            <button
+              type="button"
+              id="btn-cancel-scan-operation"
+              onClick={handleCancelOperation}
+              className="py-3 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium transition active:scale-95 cursor-pointer"
+            >
+              Cancel
+            </button>
+          )}
+
           <button
             type="button"
             id="btn-stop-camera"
@@ -317,8 +308,15 @@ export const UnifiedScannerSection: React.FC<UnifiedScannerSectionProps> = ({
 
       {/* Notice / Status Message */}
       {detectionNotice && (
-        <div className="p-3 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] text-xs text-[var(--theme-text)] font-medium flex items-center gap-2 animate-in fade-in">
+        <div className="p-3 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] text-xs text-[var(--theme-text)] font-medium flex items-center justify-between gap-2 animate-in fade-in">
           <span>{detectionNotice}</span>
+          <button
+            type="button"
+            onClick={handleCancelOperation}
+            className="text-[11px] underline text-[var(--theme-text)] font-medium cursor-pointer"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -332,9 +330,14 @@ export const UnifiedScannerSection: React.FC<UnifiedScannerSectionProps> = ({
             <span className="text-xs font-semibold text-gray-900">
               {TRANSLATIONS.foundNumbers}
             </span>
-            <span className="text-[11px] text-gray-400">
-              {TRANSLATIONS.selectNumberInstruction}
-            </span>
+            <button
+              type="button"
+              id="btn-cancel-candidates"
+              onClick={handleCancelOperation}
+              className="text-xs text-gray-500 hover:text-gray-800 font-medium cursor-pointer"
+            >
+              Cancel
+            </button>
           </div>
 
           {/* Multiple Candidates selection chips */}

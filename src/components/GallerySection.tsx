@@ -20,6 +20,21 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
   const [editingCandidate, setEditingCandidate] = useState<string>('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
+  const handleCancel = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setImagePreview(null);
+    setIsProcessing(false);
+    setDetectedCandidates([]);
+    setSelectedCandidate('');
+    setEditingCandidate('');
+    setStatusMessage(null);
+  };
+
   const processImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
       setStatusMessage('Please select a valid image file (PNG, JPG, WebP).');
@@ -159,9 +174,20 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
                 </div>
               )}
             </div>
-            <span className="text-xs text-[var(--theme-text)] font-medium underline">
-              Choose another image
-            </span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-[var(--theme-text)] font-medium underline">
+                Choose another
+              </span>
+              <span className="text-gray-300">•</span>
+              <button
+                type="button"
+                id="btn-cancel-gallery-image"
+                onClick={handleCancel}
+                className="text-xs text-red-500 hover:text-red-600 font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -182,9 +208,18 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
 
       {/* Status Notice */}
       {statusMessage && (
-        <div className="p-3 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] text-xs text-[var(--theme-text)] font-medium flex items-center gap-2 animate-in fade-in">
-          {isProcessing && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-          <span>{statusMessage}</span>
+        <div className="p-3 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] text-xs text-[var(--theme-text)] font-medium flex items-center justify-between gap-2 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            {isProcessing && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+            <span>{statusMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="text-[11px] underline text-[var(--theme-text)] font-medium cursor-pointer"
+          >
+            Cancel
+          </button>
         </div>
       )}
 
@@ -198,9 +233,14 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
             <span className="text-xs font-semibold text-gray-900">
               {TRANSLATIONS.foundNumbers}
             </span>
-            <span className="text-[11px] text-gray-400">
-              {TRANSLATIONS.selectNumberInstruction}
-            </span>
+            <button
+              type="button"
+              id="btn-cancel-gallery-candidates"
+              onClick={handleCancel}
+              className="text-xs text-gray-500 hover:text-gray-800 font-medium cursor-pointer"
+            >
+              Cancel
+            </button>
           </div>
 
           {/* Multiple Candidates Selection */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, MessageCircle } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { TRANSLATIONS } from '../data/translations';
 
 interface HeaderProps {
@@ -10,16 +10,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
   return (
     <header
       id="app-header"
-      className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white/95 backdrop-blur-sm sticky top-0 z-30 transition-colors"
+      className="w-full flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-gray-200/90 bg-white/95 backdrop-blur-sm shadow-xs transition-colors"
     >
       <div className="flex items-center gap-2.5">
-        {/* Minimal WhatsApp-style icon */}
-        <div
+        {/* WhatsApp Direct Header Logo */}
+        <img
           id="header-app-icon"
-          className="w-9 h-9 rounded-xl bg-[var(--theme-color)] flex items-center justify-center text-white shadow-xs flex-shrink-0 transition-transform active:scale-95"
-        >
-          <MessageCircle className="w-5 h-5 fill-current stroke-white stroke-[1.5]" />
-        </div>
+          src="/wpheader.png"
+          alt="WhatsApp Direct Logo"
+          referrerPolicy="no-referrer"
+          className="w-9 h-9 object-contain rounded-xl shadow-xs flex-shrink-0 transition-transform active:scale-95"
+        />
 
         {/* Title and small subtitle */}
         <div className="flex flex-col">

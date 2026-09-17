@@ -6,11 +6,12 @@ import { UnifiedScannerSection } from './components/UnifiedScannerSection';
 import { GallerySection } from './components/GallerySection';
 import { CountrySelectorModal } from './components/CountrySelectorModal';
 import { SettingsScreen } from './components/SettingsScreen';
-import { WaveAnimation } from './components/WaveAnimation';
+import { ParticleBackground } from './components/ParticleBackground';
 import { DEFAULT_COUNTRY_CODE, getCountryByCode } from './data/countries';
 import { TRANSLATIONS } from './data/translations';
 import { ActionOption, AppSettings, Country, RecentNumber } from './types';
 import { normalizePhoneNumber } from './utils/phoneUtils';
+import { getDarkThemeBg, getLightThemeBg } from './utils/themeColors';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -49,8 +50,9 @@ const defaultSettings: AppSettings = {
   customColorHex: DEFAULT_CUSTOM_COLOR,
   defaultCountryCode: DEFAULT_COUNTRY_CODE,
   autoGenerateLink: true,
-  waveAnimation: true,
-  waveSpeed: 'natural',
+  particleBackground: true,
+  particleSpeed: '6s',
+  customParticleDuration: 6,
   historyEnabled: true,
 };
 
@@ -66,6 +68,19 @@ export default function App() {
         if (parsed.customColorHex === '#25D366') {
           parsed.customColorHex = DEFAULT_CUSTOM_COLOR;
         }
+        if (parsed.particleBackground === undefined) {
+          parsed.particleBackground = true;
+        }
+        if (parsed.particleSpeed === undefined) {
+          parsed.particleSpeed = '6s';
+        }
+        if (parsed.customParticleDuration === undefined) {
+          parsed.customParticleDuration = 6;
+        }
+        delete parsed.waveAnimation;
+        delete parsed.waveSpeed;
+        delete parsed.customWaveDuration;
+
         return { ...defaultSettings, ...parsed };
       }
     } catch (e) {
@@ -311,6 +326,17 @@ export default function App() {
   const touchStartTime = useRef<number>(0);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable)
+    ) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      return;
+    }
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     touchStartTime.current = Date.now();
@@ -348,6 +374,12 @@ export default function App() {
 
   const activeIndex = MODES.indexOf(activeAction);
 
+  // Darkish version of theme color for Home background and particle canvas
+  const darkThemeBg = useMemo(
+    () => getDarkThemeBg(settings.themeColor, settings.customColorHex),
+    [settings.themeColor, settings.customColorHex]
+  );
+
   // If Settings screen is open, display it cleanly
   if (isSettingsOpen) {
     return (
@@ -367,23 +399,34 @@ export default function App() {
   return (
     <div
       id="whatsapp-direct-app"
-      className="min-h-screen w-full text-gray-900 flex flex-col justify-between relative overflow-x-hidden selection:bg-[var(--theme-color)] selection:text-white transition-colors"
-      style={{ backgroundColor: 'var(--theme-bg)' }}
+      className="min-h-screen w-full text-gray-900 flex flex-col justify-between relative overflow-x-hidden selection:bg-[var(--theme-color)] selection:text-white transition-colors duration-500"
+      style={{ backgroundColor: darkThemeBg }}
     >
-      {/* App Container */}
-      <div className="w-full max-w-md mx-auto flex flex-col flex-1 relative z-10">
+      {/* Interactive Particle / Network Background */}
+      <ParticleBackground
+        enabled={settings.particleBackground}
+        speed={settings.particleSpeed}
+        customDuration={settings.customParticleDuration}
+        darkBgColor={darkThemeBg}
+      />
+
+      {/* App Container - ONE consistent responsive content container */}
+      <div
+        id="home-content-container"
+        className="w-full max-w-md mx-auto px-4 py-3 sm:py-4 flex flex-col gap-3.5 relative z-10 flex-1"
+      >
         {/* 1. Header (Clean, English, Settings Gear) */}
         <Header onOpenSettings={openSettings} />
 
         {/* Global Toast Notification */}
         {toastMessage && (
-          <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2 rounded-xl text-xs font-medium shadow-lg animate-in fade-in slide-in-from-top-2">
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2 rounded-xl text-xs font-medium shadow-lg animate-in fade-in slide-in-from-top-2">
             {toastMessage}
           </div>
         )}
 
         {/* 2. Main Content Area */}
-        <main className="flex-1 px-4 py-4 flex flex-col gap-3.5">
+        <main className="w-full flex flex-col gap-3.5 flex-1">
           {/* Exact 3 Mode Selector (Manual, Scan, From Gallery) */}
           <ActionCards
             activeAction={activeAction}
@@ -436,13 +479,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* 3. Subtle Animated Bottom Wave (Configurable in Settings) */}
-      <WaveAnimation
-        enabled={settings.waveAnimation}
-        speed={settings.waveSpeed}
-      />
-
-      {/* 4. Country Selector Modal */}
+      {/* 3. Country Selector Modal */}
       <CountrySelectorModal
         isOpen={isCountryModalOpen}
         onClose={closeCountryModal}

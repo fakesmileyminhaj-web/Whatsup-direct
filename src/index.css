@@ -9,7 +9,6 @@
     --theme-dark-accent: #00A884;
     --theme-text: #128C7E;
     --theme-bg: #EEF6F2;
-    --wave-duration: 6s;
   }
 
   /* Exactly 3 Theme Colors */
@@ -34,69 +33,6 @@
   }
 
   /* 3. Custom Color is dynamically injected via root inline styles in App.tsx */
-}
-
-/* Custom breathing wave animations */
-@keyframes breathingWave1 {
-  0% {
-    transform: translateY(0px) scaleY(1);
-  }
-  50% {
-    transform: translateY(-8px) scaleY(1.08);
-  }
-  100% {
-    transform: translateY(0px) scaleY(1);
-  }
-}
-
-@keyframes breathingWave2 {
-  0% {
-    transform: translateY(0px) scaleY(1) scaleX(1);
-  }
-  50% {
-    transform: translateY(-13px) scaleY(1.14) scaleX(1.02);
-  }
-  100% {
-    transform: translateY(0px) scaleY(1) scaleX(1);
-  }
-}
-
-@keyframes breathingWave3 {
-  0% {
-    transform: translateY(0px) scaleY(1);
-  }
-  50% {
-    transform: translateY(-5px) scaleY(1.05);
-  }
-  100% {
-    transform: translateY(0px) scaleY(1);
-  }
-}
-
-.animate-wave-1 {
-  animation: breathingWave1 var(--wave-duration, 6s) cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  transform-origin: bottom center;
-}
-
-.animate-wave-2 {
-  animation: breathingWave2 calc(var(--wave-duration, 6s) * 1.2) cubic-bezier(0.42, 0, 0.58, 1) infinite;
-  animation-delay: -1.5s;
-  transform-origin: bottom center;
-}
-
-.animate-wave-3 {
-  animation: breathingWave3 calc(var(--wave-duration, 6s) * 0.9) cubic-bezier(0.37, 0, 0.63, 1) infinite;
-  animation-delay: -3s;
-  transform-origin: bottom center;
-}
-
-/* Respect user reduced-motion preferences */
-@media (prefers-reduced-motion: reduce) {
-  .animate-wave-1,
-  .animate-wave-2,
-  .animate-wave-3 {
-    animation: none !important;
-  }
 }
 
 /* Mobile viewport and tap improvements */

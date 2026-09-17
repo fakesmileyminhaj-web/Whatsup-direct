@@ -23,13 +23,16 @@ export interface RecentNumber {
   timestamp: number;
 }
 
+export type ParticleSpeedSetting = '3s' | '6s' | 'custom';
+
 export interface AppSettings {
   themeColor: ThemeColor;
   customColorHex?: string;
   defaultCountryCode: string; // e.g. 'BD'
   autoGenerateLink: boolean;
-  waveAnimation: boolean;
-  waveSpeed: 'calm' | 'natural' | 'slow';
+  particleBackground: boolean;
+  particleSpeed: ParticleSpeedSetting;
+  customParticleDuration?: number;
   historyEnabled: boolean;
 }
 

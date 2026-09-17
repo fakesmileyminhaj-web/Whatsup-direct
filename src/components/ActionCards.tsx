@@ -48,8 +48,8 @@ export const ActionCards: React.FC<ActionCardsProps> = ({
             onClick={() => onSelectAction(mode.id)}
             className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center group cursor-pointer active:scale-95 ${
               isSelected
-                ? 'border-[var(--theme-color)] bg-[var(--theme-surface)] text-gray-900 shadow-xs'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                ? 'border-[var(--theme-color)] bg-white text-gray-900 shadow-sm ring-2 ring-[var(--theme-color)]/25'
+                : 'border-gray-200/90 bg-white/95 text-gray-600 hover:border-gray-300 shadow-xs'
             }`}
           >
             <div

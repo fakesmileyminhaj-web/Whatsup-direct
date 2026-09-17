@@ -14,10 +14,11 @@ import {
   Instagram,
   Facebook,
 } from 'lucide-react';
-import { AppSettings, RecentNumber, ThemeColor } from '../types';
+import { AppSettings, RecentNumber, ThemeColor, ParticleSpeedSetting } from '../types';
 import { TRANSLATIONS } from '../data/translations';
 import { COUNTRIES } from '../data/countries';
 import { SOCIAL_PROFILES } from '../data/socialProfiles';
+import { getLightThemeBg } from '../utils/themeColors';
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -45,6 +46,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
+
+  const [customDurationInput, setCustomDurationInput] = useState<string>(
+    settings.customParticleDuration ? String(settings.customParticleDuration) : '6'
+  );
+  const [customDurationError, setCustomDurationError] = useState<string | null>(null);
 
   const customColorInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -97,7 +103,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     <div
       id="settings-screen"
       className="min-h-screen w-full flex flex-col text-gray-900 transition-colors pb-12"
-      style={{ backgroundColor: 'var(--theme-bg)' }}
+      style={{ backgroundColor: getLightThemeBg(settings.themeColor, settings.customColorHex) }}
     >
       {/* Compact Header with Back Button */}
       <header className="sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-2xs">
@@ -273,64 +279,146 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </select>
             </div>
 
-            {/* Bottom Wave Animation Toggle */}
+            {/* Particle Background Toggle */}
             <div className="flex items-center justify-between pt-2 border-t border-gray-100">
               <div className="flex flex-col">
                 <span className="text-xs font-medium text-gray-800">
-                  {TRANSLATIONS.waveAnimation}
+                  {TRANSLATIONS.particleBackground}
                 </span>
                 <span className="text-[11px] text-gray-400">
-                  {TRANSLATIONS.waveAnimationDesc}
+                  {TRANSLATIONS.particleBackgroundDesc}
                 </span>
               </div>
               <button
                 type="button"
-                id="toggle-wave-animation"
+                id="toggle-particle-background"
                 onClick={() =>
-                  onUpdateSettings({ waveAnimation: !settings.waveAnimation })
+                  onUpdateSettings({ particleBackground: !settings.particleBackground })
                 }
                 className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
-                  settings.waveAnimation
+                  settings.particleBackground
                     ? 'bg-[var(--theme-color)]'
                     : 'bg-gray-300'
                 }`}
               >
                 <div
                   className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform absolute top-0.5 ${
-                    settings.waveAnimation ? 'left-5.5' : 'left-0.5'
+                    settings.particleBackground ? 'left-5.5' : 'left-0.5'
                   }`}
                 />
               </button>
             </div>
 
-            {/* Wave Speed Selector */}
-            {settings.waveAnimation && (
-              <div className="flex items-center justify-between pl-2">
-                <span className="text-xs text-gray-600">
-                  {TRANSLATIONS.waveSpeed}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  {(
-                    [
-                      { id: 'calm', label: TRANSLATIONS.speedCalm },
-                      { id: 'natural', label: TRANSLATIONS.speedNatural },
-                      { id: 'slow', label: TRANSLATIONS.speedSlow },
-                    ] as const
-                  ).map((spd) => (
-                    <button
-                      key={spd.id}
-                      type="button"
-                      onClick={() => onUpdateSettings({ waveSpeed: spd.id })}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
-                        settings.waveSpeed === spd.id
-                          ? 'bg-[var(--theme-color)] text-white shadow-xs'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {spd.label}
-                    </button>
-                  ))}
+            {/* Particle Speed Selector (Exactly: 3 seconds, 6 seconds, Custom) */}
+            {settings.particleBackground && (
+              <div className="flex flex-col gap-2 pl-1 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600 font-medium">
+                    {TRANSLATIONS.particleSpeed}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {[
+                      { id: '3s' as ParticleSpeedSetting, label: TRANSLATIONS.speed3s },
+                      { id: '6s' as ParticleSpeedSetting, label: TRANSLATIONS.speed6s },
+                      { id: 'custom' as ParticleSpeedSetting, label: TRANSLATIONS.speedCustom },
+                    ].map((spd) => {
+                      const isSelected = settings.particleSpeed === spd.id;
+
+                      return (
+                        <button
+                          key={spd.id}
+                          type="button"
+                          id={`btn-particle-speed-${spd.id}`}
+                          onClick={() => {
+                            if (spd.id === 'custom') {
+                              onUpdateSettings({
+                                particleSpeed: 'custom',
+                                customParticleDuration:
+                                  settings.customParticleDuration || 6,
+                              });
+                            } else {
+                              onUpdateSettings({
+                                particleSpeed: spd.id,
+                              });
+                            }
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-[var(--theme-color)] text-white shadow-xs'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {spd.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {/* Custom Particle Duration Field (0.5 to 15 seconds) */}
+                {settings.particleSpeed === 'custom' && (
+                  <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200 flex flex-col gap-1.5 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-gray-600">
+                        Custom Duration (0.5s – 15s):
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          id="input-custom-particle-duration"
+                          type="number"
+                          step="0.5"
+                          min="0.5"
+                          max="15"
+                          value={customDurationInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCustomDurationInput(val);
+                            const num = parseFloat(val);
+                            if (val.trim() === '' || isNaN(num) || num < 0.5 || num > 15) {
+                              setCustomDurationError(
+                                TRANSLATIONS.particleSpeedValidationMessage
+                              );
+                              return;
+                            }
+                            setCustomDurationError(null);
+                            onUpdateSettings({
+                              particleSpeed: 'custom',
+                              customParticleDuration: num,
+                            });
+                          }}
+                          onBlur={() => {
+                            const num = parseFloat(customDurationInput);
+                            if (isNaN(num) || num < 0.5 || num > 15) {
+                              showToast(TRANSLATIONS.particleSpeedValidationMessage);
+                              const safeFallback =
+                                settings.customParticleDuration &&
+                                settings.customParticleDuration >= 0.5 &&
+                                settings.customParticleDuration <= 15
+                                  ? settings.customParticleDuration
+                                  : 6;
+                              setCustomDurationInput(String(safeFallback));
+                              setCustomDurationError(null);
+                              onUpdateSettings({
+                                particleSpeed: 'custom',
+                                customParticleDuration: safeFallback,
+                              });
+                            }
+                          }}
+                          className="w-16 px-2 py-1 text-xs font-mono font-semibold bg-white border border-gray-300 rounded-lg text-gray-900 text-center focus:outline-none focus:border-[var(--theme-color)]"
+                        />
+                        <span className="text-[11px] text-gray-500 font-medium">
+                          sec
+                        </span>
+                      </div>
+                    </div>
+
+                    {customDurationError && (
+                      <span className="text-[11px] text-red-500 font-medium">
+                        {customDurationError}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -547,7 +635,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <span className="text-[11px] text-gray-500 font-normal">
               Developed by
             </span>
-            <span className="text-xs font-semibold text-gray-800">
+            <span className="text-[14px] font-bold text-gray-900 tracking-tight">
               SmileyMinhaj
             </span>
           </div>
