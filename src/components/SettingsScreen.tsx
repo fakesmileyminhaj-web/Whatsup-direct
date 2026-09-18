@@ -662,6 +662,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               );
             })}
           </div>
+
+          {/* App Version Display */}
+          <div
+            id="settings-app-version"
+            className="text-[11px] text-gray-400 font-mono tracking-wide mt-1"
+          >
+            WhatsApp Direct v2.4.7
+          </div>
         </div>
       </div>
 
